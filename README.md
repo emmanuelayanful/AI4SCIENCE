@@ -1,4 +1,4 @@
-# Nim Game with AI Using Pygame
+# Nim Game implemented with AI Using Pygame
 
 This is a Python implementation of the classic **Nim Game**, where a player competes against an AI. The AI uses the XOR-sum strategy to make optimal moves. The game is built using the **Pygame** library, featuring interactive gameplay with restart and end-game options.
 
@@ -35,3 +35,6 @@ This is a Python implementation of the classic **Nim Game**, where a player comp
 1. Clone this repository:
    ```bash
    git clone https://github.com/your-username/nim-game.git
+2. Install requirements:
+   ```bash
+    pip install -r requirements.txt
