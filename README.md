@@ -34,7 +34,7 @@ This is a Python implementation of the classic **Nim Game**, where a player comp
 ## **Setup and Installation**
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/nim-game.git
+   git clone https://github.com/your-username/nim-game.git](https://github.com/emmanuelayanful/AI4SCIENCE.git)
 2. Install requirements:
    ```bash
     pip install -r requirements.txt
