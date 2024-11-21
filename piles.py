@@ -8,7 +8,7 @@ pygame.init()
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 750
 BG_COLOR = (20, 20, 40)  # Darker background for a polished look
-STONE_COLOR = (220, 70, 70)
+TOKEN_COLOR = (220, 70, 70)
 HIGHLIGHT_COLOR = (70, 220, 70)
 TEXT_COLOR = (255, 255, 255)
 BUTTON_COLOR = (50, 100, 200)
@@ -17,6 +17,10 @@ LEVEL_BUTTON_COLOR = (100, 150, 250)
 # Create screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Game of Piles")
+
+# Images for loading at win and lose situation
+win = pygame.image.load("./images/win.webp").convert()
+lose = pygame.image.load("./images/lose.webp").convert()
 
 # Fonts
 font = pygame.font.Font(None, 36)
@@ -42,24 +46,24 @@ input_text = ""
 # Functions
 def reset_game():
     """Reset the game state."""
-    global piles, player_turn, winner, last_move, highlighted_stones, stone_positions, ai_difficulty, game_over
+    global piles, player_turn, winner, last_move, highlighted_tokens, token_positions, ai_difficulty, game_over
     piles = [random.randint(1, 10) for _ in range(2)]
     player_turn = True
     winner = None
     last_move = None
-    highlighted_stones = []
-    stone_positions = generate_stone_positions()
+    highlighted_tokens = []
+    token_positions = generate_token_positions()
     game_over = False
     
 def reset_piles(num_piles):
     """Reset the piles with a specified number of piles."""
-    global piles, stone_positions
+    global piles, token_positions
     piles = [random.randint(1, 10) for _ in range(num_piles)]
-    stone_positions = generate_stone_positions()
+    token_positions = generate_token_positions()
     game_over = False
 
-def generate_stone_positions():
-    """Generate positions for stones based on piles."""
+def generate_token_positions():
+    """Generate positions for tokens based on piles."""
     positions = []
     for i, pile_size in enumerate(piles):
         pile_x = 100 + i * 200  # Adjust spacing for better layout
@@ -67,10 +71,10 @@ def generate_stone_positions():
     return positions
 
 def draw_piles():
-    """Draw the piles of stones on the screen."""
-    for pile_index, pile in enumerate(stone_positions):
-        for stone_index, (x, y) in enumerate(pile):
-            color = HIGHLIGHT_COLOR if (pile_index, stone_index) in highlighted_stones else STONE_COLOR
+    """Draw the piles of tokens on the screen."""
+    for pile_index, pile in enumerate(token_positions):
+        for token_index, (x, y) in enumerate(pile):
+            color = HIGHLIGHT_COLOR if (pile_index, token_index) in highlighted_tokens else TOKEN_COLOR
             pygame.draw.circle(screen, color, (x, y), 15)
 
 def display_text(text, x, y, font=font, color=TEXT_COLOR):
@@ -88,25 +92,25 @@ def calculate_nim_sum():
 def find_optimal_move():
     """Find the optimal move for the AI based on the difficulty level."""
     if ai_difficulty == "Easy":
-        # Easy: Random biased play
+        # Easy: Random valid move
         non_empty_piles = [i for i, pile in enumerate(piles) if pile > 0]
         pile = random.choice(non_empty_piles)
-        stones = random.randint(1, piles[pile])
-        return pile, stones
+        tokens = random.randint(1, piles[pile])
+        return pile, tokens
 
     elif ai_difficulty == "Normal":
-        # Normal: Random valid move
+        # Normal: Random biased move with probability
         non_empty_piles = [i for i, pile in enumerate(piles) if pile > 0]
         if random.random() >= 0.5:
             pile = random.choice(non_empty_piles)
-            stones = random.randint(1, piles[pile])
+            tokens = random.randint(1, piles[pile])
         else:
             nim_sum = calculate_nim_sum()
             for i, pile in enumerate(piles):
                 target = pile ^ nim_sum
                 if target < pile:  # Valid move
                     return i, pile - target
-        return pile, stones
+        return pile, tokens
 
     elif ai_difficulty == "Hard":
         # Hard: XOR strategy
@@ -115,21 +119,21 @@ def find_optimal_move():
             # No winning move, play randomly
             non_empty_piles = [i for i, pile in enumerate(piles) if pile > 0]
             pile = random.choice(non_empty_piles)
-            stones = random.randint(1, piles[pile])
-            return pile, stones
+            tokens = random.randint(1, piles[pile])
+            return pile, tokens
         for i, pile in enumerate(piles):
             target = pile ^ nim_sum
             if target < pile:  # Valid move
                 return i, pile - target
 
-def remove_stones(pile_index, stones):
-    """Remove stones from a pile."""
-    piles[pile_index] -= stones
-    stone_positions[pile_index] = stone_positions[pile_index][:-stones]
+def remove_tokens(pile_index, tokens):
+    """Remove tokens from a pile."""
+    piles[pile_index] -= tokens
+    token_positions[pile_index] = token_positions[pile_index][:-tokens]
 
 
 # Add this variable to keep track of the selected difficulty level
-selected_difficulty = "Normal"  # Default difficulty level
+selected_difficulty = "Easy"  # Default difficulty level
 
 # Update the draw_buttons function to change the color based on selection
 def draw_buttons():
@@ -159,18 +163,18 @@ def draw_buttons():
     display_text("Set Piles", set_piles_button_rect.x + 20, set_piles_button_rect.y + 10, small_font)
     display_text(input_text, input_box.x + 10, input_box.y + 5, small_font)
 
-def get_hovered_stone(mouse_pos):
+def get_hovered_token(mouse_pos):
     """Check if the mouse is hovering over a stone."""
-    for pile_index, pile in enumerate(stone_positions):
-        for stone_index, (x, y) in enumerate(pile):
+    for pile_index, pile in enumerate(token_positions):
+        for token_index, (x, y) in enumerate(pile):
             if abs(mouse_pos[0] - x) < 20 and abs(mouse_pos[1] - y) < 20:
-                return pile_index, stone_index
+                return pile_index, token_index
     return None, None
 
 # Initialize game state
 piles = []
-stone_positions = []
-highlighted_stones = []
+token_positions = []
+highlighted_tokens = []
 player_turn = True
 winner = None
 last_move = None
@@ -183,40 +187,45 @@ running = True
 while running:
     screen.fill(BG_COLOR)
 
-    # Draw piles
-    draw_piles()
+    if not game_over:
+        # Draw piles
+        draw_piles()
 
-    # Draw buttons
-    draw_buttons()
+        # Draw buttons
+        draw_buttons()
 
-    # Display player turn or winner
-    if winner:
-        display_text(f"{winner} Wins!", SCREEN_WIDTH // 2 - 100, 100, font, HIGHLIGHT_COLOR)
-    elif player_turn:
-        display_text("Your Turn", SCREEN_WIDTH // 2 - 80, 100)
+        # Display player turn or winner
+        if player_turn:
+            display_text("Your Turn", SCREEN_WIDTH // 2 - 80, 100)
+        else:
+            display_text("AI's Turn", SCREEN_WIDTH // 2 - 80, 100)
+
+        # Display the last move
+        if last_move:
+            display_text(f"Last Move: {last_move}", 20, SCREEN_HEIGHT - 80, small_font)
+
+        # Display total tokens
+        total_tokens = sum(piles)
+        display_text(f"Total tokens: {total_tokens}", 20, SCREEN_HEIGHT - 50, small_font)
     else:
-        display_text("AI's Turn", SCREEN_WIDTH // 2 - 80, 100)
-
-    # Display the last move
-    if last_move:
-        display_text(f"Last Move: {last_move}", 20, SCREEN_HEIGHT - 80, small_font)
-
-    # Display total stones
-    total_stones = sum(piles)
-    display_text(f"Total Stones: {total_stones}", 20, SCREEN_HEIGHT - 50, small_font)
+        # Show win/lose screen
+        if winner == "Player":
+            screen.blit(win, (SCREEN_WIDTH // 2 - win.get_width() // 2, SCREEN_HEIGHT // 2 - win.get_height() // 2))
+        else:
+            screen.blit(lose, (SCREEN_WIDTH // 2 - lose.get_width() // 2, SCREEN_HEIGHT // 2 - lose.get_height() // 2))
+        pygame.display.flip()
+        pygame.time.delay(3000)  # Wait 3 seconds before resetting
+        reset_game()
 
     # Event handling
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             if end_button_rect.collidepoint(event.pos):
                 running = False
-            
-            elif input_box.collidepoint(event.pos):
-                input_active = True
-                    
+                
             elif restart_button_rect.collidepoint(event.pos):
                 reset_game()
                 
@@ -228,20 +237,19 @@ while running:
                 
             elif hard_button_rect.collidepoint(event.pos):
                 selected_difficulty = ai_difficulty = "Hard"
-                
             else:
-                pile_index, stone_index = get_hovered_stone(event.pos)
+                pile_index, token_index = get_hovered_token(event.pos)
                 if pile_index is not None and player_turn:
-                    stones_to_remove = len(stone_positions[pile_index]) - stone_index
-                    remove_stones(pile_index, stones_to_remove)
-                    last_move = f"Player removed {stones_to_remove} stone(s) from pile {pile_index + 1}"
+                    tokens_to_remove = len(token_positions[pile_index]) - token_index
+                    remove_tokens(pile_index, tokens_to_remove)
+                    last_move = f"Player removed {tokens_to_remove} token(s) from pile {pile_index + 1}"
                     player_turn = False
-                
+                    
                 input_active = False
                 if set_piles_button_rect.collidepoint(event.pos) and input_text.isdigit():
                     reset_piles(int(input_text))
                     input_text = ""
-        
+                    
         if event.type == pygame.MOUSEBUTTONDOWN:
             if input_box.collidepoint(event.pos):
                 input_active = True
@@ -263,28 +271,28 @@ while running:
                 input_text += event.unicode
 
     # AI's turn
-    if not player_turn and not winner and not game_over:
+    if not player_turn and not game_over:
         if any(pile > 0 for pile in piles):
             pygame.time.wait(1000)
-            pile, stones = find_optimal_move()
-            remove_stones(pile, stones)
-            last_move = f"AI removed {stones} stone(s) from pile {pile + 1}"
+            pile, tokens = find_optimal_move()
+            remove_tokens(pile, tokens)
+            last_move = f"AI removed {tokens} token(s) from pile {pile + 1}"
             player_turn = True
 
     # Check for winner
     if all(pile == 0 for pile in piles) and not game_over:
         winner = "Player" if not player_turn else "AI"
         game_over = True
-    
-    # Highlight stones
-    if player_turn:
+
+    # Highlight tokens
+    if player_turn and not game_over:
         mouse_pos = pygame.mouse.get_pos()
-        pile_index, stone_index = get_hovered_stone(mouse_pos)
-        if pile_index is not None and stone_index is not None:
-            highlighted_stones = [(pile_index, i) for i in range(stone_index, len(stone_positions[pile_index]))]
+        pile_index, token_index = get_hovered_token(mouse_pos)
+        if pile_index is not None and token_index is not None:
+            highlighted_tokens = [(pile_index, i) for i in range(token_index, len(token_positions[pile_index]))]
         else:
-            highlighted_stones = []
-        
+            highlighted_tokens = []
+
     pygame.display.flip()
 
 pygame.quit()
